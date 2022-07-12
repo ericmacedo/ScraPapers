@@ -24,12 +24,14 @@ class WebDriver:
         opts = FirefoxOptions()
         opts.add_argument("--headless")
 
-        opts.set_preference("browser.download.folderList", 2)
-        opts.set_preference("browser.download.dir", f"{self.__download_dir}")
-        opts.set_preference("browser.download.useDownloadDir", True)
-        opts.set_preference(
-            "browser.helperApps.neverAsk.saveToDisk", "application/pdf")
-        opts.set_preference("pdfjs.disabled", True)
+        preferences = [
+            ("browser.download.folderList", 2),
+            ("browser.download.dir", f"{self.__download_dir}"),
+            ("browser.download.useDownloadDir", True)
+            ("browser.helperApps.neverAsk.saveToDisk", "application/pdf"),
+            ("pdfjs.disabled", True)]
+        for pref in preferences:
+            opts.set_preference(*pref)
 
         self.__browser = webdriver.Firefox(
             executable_path=f"{geckodriver_path}.{self.__driver_ext()}",
