@@ -1,16 +1,16 @@
 import re
 from datetime import datetime
 from typing import List
-from scrappers import Scrapper
+from scrapers import Scraper
 
 import requests
 from bs4 import BeautifulSoup
 from utils.text import strip_name
 
 
-class BMCScrapper(Scrapper):
+class BMCScraper(Scraper):
     def __init__(self, doi: str):
-        super(BMCScrapper, self).__init__(doi)
+        super(BMCScraper, self).__init__(doi)
 
         if (request := requests.get(f"https://doi.org/{self.doi}")).ok:
             self.__soup = BeautifulSoup(request.content, "html.parser")

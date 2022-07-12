@@ -5,7 +5,7 @@ from typing import List
 import requests
 from selenium.webdriver.common.by import By
 
-from scrappers import Scrapper
+from scrapers import Scraper
 from utils import get_latest_pdf_path
 from utils.pdf import pdf_to_string
 from utils.text import strip_name, fix_text_wraps
@@ -14,9 +14,9 @@ from webdriver import WebDriver
 import os
 
 
-class IEEEScrapper(Scrapper):
+class IEEEScraper(Scraper):
     def __init__(self, doi: str):
-        super(IEEEScrapper, self).__init__(doi)
+        super(IEEEScraper, self).__init__(doi)
 
         if (request := requests.get(f"https://doi.org/{self.doi}")).ok:
             self._url = request.url

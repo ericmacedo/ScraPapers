@@ -5,7 +5,7 @@ from typing import List
 from urllib.parse import urlparse
 
 
-class Scrapper(ABC):
+class Scraper(ABC):
     def __init__(self, doi: str):
         doi = doi.strip()
         self._id = hashlib.md5(doi.encode("utf-8"))
@@ -14,6 +14,10 @@ class Scrapper(ABC):
     def is_domain_supported(self) -> bool:
         domain = urlparse(self.url).netloc
         return any(sup in domain for sup in self.SUPPORTED_DOMAINS)
+
+    @property
+    def id(self) -> str:
+        return self._id
 
     @property
     def url(self) -> str:

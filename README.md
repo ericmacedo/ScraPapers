@@ -11,7 +11,7 @@
 	- `geckodriver.osx`: for MacOS
 	- `geckodriver.exe`: for Windows
 
-## Available Scrappers
+## Available Scrapers
 
 - [x] BioMed Central
 	- Content and metadata parsed
