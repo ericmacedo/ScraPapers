@@ -15,19 +15,8 @@ import os
 
 
 class IEEEScraper(Scraper):
-    def __init__(self, doi: str):
-        super(IEEEScraper, self).__init__(doi)
-
-        if (request := requests.get(f"https://doi.org/{self.doi}")).ok:
-            self._url = request.url
-
-            if not self.is_domain_supported():
-                raise Exception(f"Unsupported url: {self.url}")
-
-            self.__webdriver = WebDriver()
-            self.__webdriver.get(request.url)
-        else:
-            raise Exception(f"Request error (Code {request.status_code})")
+    def __init__(self, browser: WebDriver):
+        self.__webdriver: WebDriver = browser
 
     @property
     def __is_content_html(self) -> bool:
@@ -45,11 +34,16 @@ class IEEEScraper(Scraper):
 
     @property
     def authors(self) -> List[str]:
-        authors = [
-            strip_name(i.text)
-            for i in self.__webdriver.find_elements(".authors-info")
-        ]
-        return authors if any(authors) else None
+        id = "#authors-header"
+        el = self.__webdriver.find_element(id)
+
+        if el.get_attribute("aria-expanded") == "false":
+            self.__webdriver.click_element(id, ".authors-accordion-container")
+
+        return [
+            strip_name(i.text.split("\n")[0])
+            for i in self.__webdriver.find_elements(
+                ".authors-accordion-container")]
 
     @property
     def content(self) -> str:
