@@ -27,7 +27,7 @@ class WebDriver:
         preferences = [
             ("browser.download.folderList", 2),
             ("browser.download.dir", f"{self.__download_dir}"),
-            ("browser.download.useDownloadDir", True)
+            ("browser.download.useDownloadDir", True),
             ("browser.helperApps.neverAsk.saveToDisk", "application/pdf"),
             ("pdfjs.disabled", True)]
         for pref in preferences:

@@ -1,25 +1,17 @@
 import re
 from datetime import datetime
-from typing import List
-from scrapers import Scraper
+from typing import Dict, List
 
-import requests
-from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+
+from scrapers import IScraperStrategy
 from utils.text import strip_name
+from webdriver import WebDriver
 
 
-class BMCScraper(Scraper):
-    def __init__(self, doi: str):
-        super(BMCScraper, self).__init__(doi)
-
-        if (request := requests.get(f"https://doi.org/{self.doi}")).ok:
-            self.__soup = BeautifulSoup(request.content, "html.parser")
-            self._url = request.url
-
-            if not self.is_domain_supported():
-                raise Exception(f"Unsupported url: {self.url}")
-        else:
-            raise Exception(f"Request error (Code {request.status_code})")
+class BMCScraper(IScraperStrategy):
+    def __init__(self, browser: WebDriver):
+        self.__webdriver: WebDriver = browser
 
     @property
     def CONTENT_SECTIONS(self) -> List[str]:
@@ -39,7 +31,9 @@ class BMCScraper(Scraper):
         ]
 
     def __get_metadata(self, name: str) -> str:
-        return self.__soup.find("meta", {"name": name}).attrs['content']
+        return self.__webdriver.find_element(
+            f'meta[name="{name}"]'
+        ).get_attribute("content")
 
     @property
     def title(self) -> str:
@@ -48,31 +42,30 @@ class BMCScraper(Scraper):
     @property
     def authors(self) -> List[str]:
         authors = [
-            strip_name(i.get_text())
-            for i in self.__soup.find(
-                "ul", {"class": "c-article-author-list"}
-            ).children
+            strip_name(i.text)
+            for i in self.__webdriver.find_elements(
+                "ul.c-article-author-list li.c-article-author-list__item")
         ]
         return authors if any(authors) else None
 
     @property
     def content(self) -> str:
         sections = {
-            f"{section.lower()}": "\n".join([
-                paragraph.get_text()
-                for paragraph in section.find_all("p")
-            ]) for section in self.__soup.find_all("section")
-            if section.get("data-title") in self.CONTENT_SECTIONS
+            f"{section.get_attribute('data-title').lower()}": "\n".join([
+                paragraph.text
+                for paragraph in section.find_elements(By.TAG_NAME, "p")
+            ]) for section in self.__webdriver.find_elements("section")
+            if section.get_attribute("data-title") in self.CONTENT_SECTIONS
         }
         return "\n".join(sections.values())
 
     @property
     def abstract(self) -> str:
         return "\n".join([
-            i.get_text()
-            for i in self.__soup.find(
-                "div", {"id": "Abs1-content"}
-            ).find_all("p")
+            i.text
+            for i in self.__webdriver.find_element(
+                "#Abs1-content"
+            ).find_elements(By.TAG_NAME, "p")
         ])
 
     @property
@@ -81,7 +74,9 @@ class BMCScraper(Scraper):
 
     @property
     def source(self) -> str:
-        return self.__get_metadata("dc.source")
+        return self.__webdriver.find_element(
+            '[data-test="journal-title"]'
+        ).text
 
     @property
     def date(self) -> datetime:
@@ -89,8 +84,6 @@ class BMCScraper(Scraper):
 
     @property
     def references(self) -> List[str]:
-        references = self.__soup.find(
-            "ol", {"class": "c-article-references"}
-        ).find_all("li")
-
-        return [ref.find("p").get_text() for ref in references]
+        return [
+            ref.text for ref in self.__webdriver.find_elements(
+                'p.c-article-references__text')]
