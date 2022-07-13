@@ -16,19 +16,8 @@ import os
 
 
 class ACMScraper(Scraper):
-    def __init__(self, doi: str):
-        super(ACMScraper, self).__init__(doi)
-
-        if (request := requests.get(f"https://doi.org/{self.doi}")).ok:
-            self._url = request.url
-
-            if not self.is_domain_supported():
-                raise Exception(f"Unsupported url: {self.url}")
-
-            self.__webdriver = WebDriver()
-            self.__webdriver.get(request.url)
-        else:
-            raise Exception(f"Request error (Code {request.status_code})")
+    def __init__(self, browser: WebDriver):
+        self.__webdriver: WebDriver = browser
 
     @property
     def SUPPORTED_DOMAINS(self) -> List[str]:
@@ -71,7 +60,7 @@ class ACMScraper(Scraper):
     def citations(self) -> int:
         citation = self.__webdriver.find_element("span.citation").text
 
-        match = re.match(r"(\d+)\nCitation", citation)
+        match = re.match(r"(\d+)\nCitation.?", citation, re.IGNORECASE)
         return int(match.group(1)) if match else None
 
     @property
@@ -92,7 +81,7 @@ class ACMScraper(Scraper):
         if el.text == "Show All References":
             self.__webdriver.click_element(
                 selector=selector,
-                wait_for_selector=".references__item js--toggle")
+                wait_for_selector=".references__item.js--toggle")
 
         refs = self.__webdriver.find_elements(
             'li.references__item:not([id$="_copy"]) span.references__note')
