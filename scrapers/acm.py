@@ -6,7 +6,7 @@ from typing import List
 import requests
 from selenium.webdriver.common.by import By
 
-from scrapers import Scraper
+from scrapers import IScraperStrategy
 from utils import get_latest_pdf_path
 from utils.pdf import pdf_to_string
 from utils.text import strip_name, fix_text_wraps
@@ -15,15 +15,15 @@ from webdriver import WebDriver
 import os
 
 
-class ACMScraper(Scraper):
-    def __init__(self, browser: WebDriver):
-        self.__webdriver: WebDriver = browser
-
-    @property
-    def SUPPORTED_DOMAINS(self) -> List[str]:
+class ACMScraper(IScraperStrategy):
+    @classmethod
+    def SUPPORTED_DOMAINS(cls) -> List[str]:
         return [
             "dl.acm.org"
         ]
+
+    def __init__(self, browser: WebDriver):
+        self.__webdriver: WebDriver = browser
 
     @property
     def title(self) -> str:
@@ -86,3 +86,7 @@ class ACMScraper(Scraper):
         refs = self.__webdriver.find_elements(
             'li.references__item:not([id$="_copy"]) span.references__note')
         return [ref.text for ref in refs]
+
+
+def get_strategy() -> IScraperStrategy:
+    return ACMScraper

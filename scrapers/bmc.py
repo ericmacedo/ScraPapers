@@ -10,6 +10,12 @@ from webdriver import WebDriver
 
 
 class BMCScraper(IScraperStrategy):
+    @classmethod
+    def SUPPORTED_DOMAINS(cls) -> List[str]:
+        return [
+            "biomedcentral.com"
+        ]
+
     def __init__(self, browser: WebDriver):
         self.__webdriver: WebDriver = browser
 
@@ -22,12 +28,6 @@ class BMCScraper(IScraperStrategy):
             'Results',
             'Discussion',
             'Conclusions'
-        ]
-
-    @property
-    def SUPPORTED_DOMAINS(self) -> List[str]:
-        return [
-            "biomedcentral.com"
         ]
 
     def __get_metadata(self, name: str) -> str:
@@ -87,3 +87,7 @@ class BMCScraper(IScraperStrategy):
         return [
             ref.text for ref in self.__webdriver.find_elements(
                 'p.c-article-references__text')]
+
+
+def get_strategy() -> IScraperStrategy:
+    return BMCScraper

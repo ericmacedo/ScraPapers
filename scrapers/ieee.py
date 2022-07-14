@@ -5,7 +5,7 @@ from typing import List
 import requests
 from selenium.webdriver.common.by import By
 
-from scrapers import Scraper
+from scrapers import IScraperStrategy
 from utils import get_latest_pdf_path
 from utils.pdf import pdf_to_string
 from utils.text import strip_name, fix_text_wraps
@@ -14,19 +14,19 @@ from webdriver import WebDriver
 import os
 
 
-class IEEEScraper(Scraper):
+class IEEEScraper(IScraperStrategy):
+    @classmethod
+    def SUPPORTED_DOMAINS(cls) -> List[str]:
+        return [
+            "ieeexplore.ieee.org"
+        ]
+
     def __init__(self, browser: WebDriver):
         self.__webdriver: WebDriver = browser
 
     @property
     def __is_content_html(self) -> bool:
         return any(self.__webdriver.find_elements(".section"))
-
-    @property
-    def SUPPORTED_DOMAINS(self) -> List[str]:
-        return [
-            "ieeexplore.ieee.org"
-        ]
 
     @property
     def title(self) -> str:
@@ -132,3 +132,7 @@ class IEEEScraper(Scraper):
                 r"\g<ref>", ref
             ) for ref in refs
         ]
+
+
+def get_strategy() -> IScraperStrategy:
+    return IEEEScraper
