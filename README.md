@@ -22,3 +22,7 @@
 - [x] ACM Digital Library
 	- Metadata parsed
 	- PDF transcription
+
+## To do
+
+- [ ] Proxy configuration

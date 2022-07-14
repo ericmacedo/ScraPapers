@@ -6,9 +6,7 @@ import pathlib
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
 
-import requests
-
-from webdriver import WebDriver
+from webdriver import ResponseStatus, WebDriver
 
 from models import Document
 import re
@@ -97,6 +95,9 @@ class Scraper:
             for name, strategy in Scraper.AVAILABLE_STRATEGIES().items()
         }
 
+    def __del__(self):
+        del self.__webdriver
+
     def __set_strategy(self, url: str) -> bool:
         for strategy in self.__available_strategies.values():
             if urlparse(url).netloc in strategy.SUPPORTED_DOMAINS():
@@ -115,25 +116,25 @@ class Scraper:
                 doi=doi.strip())
             doc_error = None
 
-            doi_url = f"https://doi.org/{doc['doi']}"
-            if (request := requests.get(doi_url)).ok:
-                doc['url'] = request.url
+            with self.__webdriver.get(f"https://doi.org/{doc['doi']}"):
+                response: ResponseStatus = self.__webdriver.response
+                if response.status:
+                    doc['url'] = self.__webdriver.url
 
-                if self.__set_strategy(doc['url']):
-                    self.__webdriver.get(doc['url'])
-                    doc.update(dict(
-                        title=self.__strategy.title,
-                        authors=self.__strategy.authors,
-                        content=self.__strategy.content,
-                        abstract=self.__strategy.abstract,
-                        citations=self.__strategy.citations,
-                        source=self.__strategy.source,
-                        date=self.__strategy.date,
-                        references=self.__strategy.references))
+                    if self.__set_strategy(doc['url']):
+                        doc.update(dict(
+                            title=self.__strategy.title,
+                            authors=self.__strategy.authors,
+                            content=self.__strategy.content,
+                            abstract=self.__strategy.abstract,
+                            citations=self.__strategy.citations,
+                            source=self.__strategy.source,
+                            date=self.__strategy.date,
+                            references=self.__strategy.references))
+                    else:
+                        doc_error = f"Unsupported url: {doc['url']}"
                 else:
-                    doc_error = f"Unsupported url: {doc['url']}"
-            else:
-                doc_error = f"Request error (Code {request.status_code})"
+                    doc_error = f"Request error (Code {response.code})"
 
             doc = Document(**doc)
             if doc_error:
