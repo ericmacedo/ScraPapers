@@ -1,9 +1,13 @@
-import pathlib
+from collections import namedtuple
 from contextlib import contextmanager
+from os.path import getctime
+from pathlib import Path
 from sys import platform
-from typing import Any, List, Tuple
+from typing import List
 
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import (NoSuchElementException,
+                                        StaleElementReferenceException,
+                                        TimeoutException)
 from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -11,19 +15,16 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from seleniumwire import webdriver
 
-from collections import namedtuple
-
 ResponseStatus = namedtuple("ResponseStatus", ["status", "code"])
 
 
 class WebDriver:
     def __init__(self):
-        self.__geckodriver = pathlib.Path(__file__).parent.absolute().joinpath(
+        self.__geckodriver = Path(__file__).parent.absolute().joinpath(
             "geckodriver"
         ).resolve()
 
-        self.__download_dir = pathlib.Path(
-            ".").absolute().joinpath(".data").resolve()
+        self.__download_dir = Path(".").absolute().joinpath(".data").resolve()
         self.__download_dir.mkdir(parents=True, exist_ok=True)
 
         self.__options = FirefoxOptions()
@@ -73,14 +74,16 @@ class WebDriver:
             ), self.__browser.requests), None)
         return ResponseStatus(True, request.response.status_code)
 
-    @property
-    def download_dir(self) -> str:
-        return self.__download_dir
+    def download_list(self, n: int = 1, descending: bool = True) -> List[str]:
+        return sorted(
+            Path(self.__download_dir).absolute().glob("*.pdf"),
+            key=getctime, reverse=descending)[:n]
 
     @contextmanager
     def get(self, url: str) -> None:
         self.__connect()
         self.__browser.get(url)
+        self.wait_for_url_change()
 
         yield self
 
@@ -112,9 +115,24 @@ class WebDriver:
             self.__browser.execute_script("arguments[0].click();", el)
 
         if wait_for_selector:
-            WebDriverWait(self.__browser, timeout=30).until(
-                EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, wait_for_selector)))
+            self.wait_for_element(wait_for_selector)
+
+    def wait_for_element(self, selector: str) -> WebElement:
+        return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
+            StaleElementReferenceException, NoSuchElementException
+        ]).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
+
+    def wait_for_elements(self, selector: str) -> List[WebElement]:
+        return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
+            StaleElementReferenceException, NoSuchElementException
+        ]).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)))
+
+    def wait_for_url_change(self) -> None:
+        try:
+            WebDriverWait(self.__browser, 10).until(
+                EC.url_changes(self.__browser.current_url))
+        except TimeoutException:
+            pass
 
     # Browser navigation
     def back(self) -> None:
