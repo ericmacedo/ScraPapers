@@ -100,7 +100,9 @@ class Scraper:
 
     def __set_strategy(self, url: str) -> bool:
         for strategy in self.__available_strategies.values():
-            if urlparse(url).netloc in strategy.SUPPORTED_DOMAINS():
+            domains = strategy.SUPPORTED_DOMAINS()
+            netloc: str = urlparse(url).netloc
+            if any(filter(lambda i: i in netloc, domains)):
                 self.__strategy = strategy
                 return True
         return False

@@ -7,7 +7,6 @@ import requests
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils import get_latest_pdf_path
 from utils.pdf import pdf_to_string
 from utils.text import strip_name, fix_text_wraps
 from webdriver import WebDriver
@@ -41,7 +40,7 @@ class ACMScraper(IScraperStrategy):
     def content(self) -> str:
         self.__webdriver.click_element(".pdf-file a")
 
-        pdf_path = get_latest_pdf_path(self.__webdriver.download_dir)
+        pdf_path = self.__webdriver.download_list()[0]
 
         with open(pdf_path, "rb") as f_pdf:
             pdf_str = pdf_to_string(f_pdf)
