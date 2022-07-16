@@ -5,7 +5,7 @@ from typing import Dict, List
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.text import strip_name
+from utils.text import fix_text_wraps, strip_name
 from webdriver import WebDriver
 
 
@@ -20,24 +20,8 @@ class BMCScraper(IScraperStrategy):
         self.__webdriver: WebDriver = browser
 
     @property
-    def CONTENT_SECTIONS(self) -> List[str]:
-        return [
-            'Abstract',
-            'Background',
-            'Methods',
-            'Results',
-            'Discussion',
-            'Conclusions'
-        ]
-
-    def __get_metadata(self, name: str) -> str:
-        return self.__webdriver.find_element(
-            f'meta[name="{name}"]'
-        ).get_attribute("content")
-
-    @property
     def title(self) -> str:
-        return self.__get_metadata("dc.title")
+        return self.__webdriver.get_metadata(name="dc.title")
 
     @property
     def authors(self) -> List[str]:
@@ -50,14 +34,14 @@ class BMCScraper(IScraperStrategy):
 
     @property
     def content(self) -> str:
-        sections = {
-            f"{section.get_attribute('data-title').lower()}": "\n".join([
-                paragraph.text
-                for paragraph in section.find_elements(By.TAG_NAME, "p")
-            ]) for section in self.__webdriver.find_elements("section")
-            if section.get_attribute("data-title") in self.CONTENT_SECTIONS
-        }
-        return "\n".join(sections.values())
+        sections = {}
+        for section in self.__webdriver.find_elements("article section"):
+            title = section.get_attribute("data-title")
+            sections[f"{title}"] = fix_text_wraps("\n".join([
+                i.text for i in section.find_elements(
+                    By.CSS_SELECTOR, "div.c-article-section :not(h2, h3, h4)")
+            ]))
+        return "\n".join(sections.values()) if sections else None
 
     @property
     def abstract(self) -> str:
@@ -80,7 +64,8 @@ class BMCScraper(IScraperStrategy):
 
     @property
     def date(self) -> datetime:
-        return datetime.strptime(self.__get_metadata("dc.date"), "%Y-%m-%d")
+        return datetime.strptime(
+            self.__webdriver.get_metadata(name="dc.date"), "%Y-%m-%d")
 
     @property
     def references(self) -> List[str]:

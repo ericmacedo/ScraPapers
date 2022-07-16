@@ -22,7 +22,8 @@
 - [x] ACM Digital Library
 	- Metadata parsed
 	- PDF transcription
-- [ ] Elsevier
+- [x] Elsevier
+	- Content and metadata parsed
 - [ ] Springer
 - [ ] Wiley
 

@@ -1,8 +1,10 @@
+import time
 from collections import namedtuple
 from contextlib import contextmanager
 from os.path import getctime
 from pathlib import Path
 from sys import platform
+from time import sleep
 from typing import List
 
 from selenium.common.exceptions import (NoSuchElementException,
@@ -53,6 +55,11 @@ class WebDriver:
             del self.__browser
             self.__browser = None
 
+    def wait_for_download_queue(self, timeout: int = 60) -> bool:
+        while timeout and [*Path(self.__download_dir).glob("*.part")]:
+            time.sleep(1)
+            timeout -= 1
+
     def __del__(self):
         self.__disconnect()
 
@@ -99,6 +106,16 @@ class WebDriver:
 
         return ext
 
+    def get_metadata(self, **kwargs) -> str:
+        if not kwargs:
+            return None
+
+        selector: str = "meta"
+        for field, value in kwargs.items():
+            selector += f'[{field}="{value}"]'
+        return self.__browser.find_element(
+            By.CSS_SELECTOR, selector).get_attribute("content")
+
     def find_element(self, selector: str) -> WebElement:
         try:
             el = self.__browser.find_element(By.CSS_SELECTOR, selector)
@@ -118,11 +135,13 @@ class WebDriver:
             self.wait_for_element(wait_for_selector)
 
     def wait_for_element(self, selector: str) -> WebElement:
+        time.sleep(1)
         return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
             StaleElementReferenceException, NoSuchElementException
         ]).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
 
     def wait_for_elements(self, selector: str) -> List[WebElement]:
+        time.sleep(1)
         return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
             StaleElementReferenceException, NoSuchElementException
         ]).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)))

@@ -2,8 +2,6 @@ from datetime import datetime
 from typing import List
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-
 
 from scrapers import IScraperStrategy
 from utils.text import fix_text_wraps, strip_name
@@ -21,19 +19,14 @@ class ElsevierScraper(IScraperStrategy):
     def __init__(self, browser: WebDriver):
         self.__webdriver: WebDriver = browser
 
-    def __get_metadata(self, name: str) -> str:
-        return self.__webdriver.find_element(
-            f'meta[name="{name}"]'
-        ).get_attribute("content")
-
     @property
     def title(self) -> str:
-        return self.__get_metadata("citation_title")
+        return self.__webdriver.get_metadata(name="citation_title")
 
     @property
     def authors(self) -> List[str]:
         authors = [
-            el for el in self.__webdriver.wait_for_elements(
+            el for el in self.__webdriver.find_elements(
                 "div#author-group a.author")]
         authors = [
             author.find_elements(By.CSS_SELECTOR, "span.content span")
@@ -58,7 +51,7 @@ class ElsevierScraper(IScraperStrategy):
     @property
     def abstract(self) -> str:
         return "\n".join([
-            p.text for p in self.__webdriver.wait_for_elements("div#abstracts p")
+            p.text for p in self.__webdriver.find_elements("div#abstracts p")
         ])
 
     @property
@@ -69,12 +62,13 @@ class ElsevierScraper(IScraperStrategy):
 
     @property
     def source(self) -> str:
-        return self.__get_metadata("citation_journal_title")
+        return self.__webdriver.get_metadata(name="citation_journal_title")
 
     @property
     def date(self) -> datetime:
-        return datetime.strptime(self.__get_metadata(
-            "citation_publication_date"), "%Y/%m/%d")
+        return datetime.strptime(
+            self.__webdriver.get_metadata(name="citation_publication_date"),
+            "%Y/%m/%d")
 
     @property
     def references(self) -> List[str]:
