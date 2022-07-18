@@ -3,7 +3,7 @@ import re
 
 def strip_name(s: str) -> str:
     s = re.sub(
-        r"(?P<last>[A-Z][a-z]+)\,\s?(?P<first>([A-Z]([a-z]+|\.?)\ ?)+)",
+        r"(?P<last>([a-z]+\s)?[A-Z][a-z]+)\,\s?(?P<first>([A-Z]([a-z]+|\.?)\ ?)+)",
         r"\g<first> \g<last>", s)
     s = re.sub(
         r"(?:(?P<name>([A-Z]([a-z]+|\.?)\s?)+\b)\s?.*)",
