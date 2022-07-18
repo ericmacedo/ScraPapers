@@ -24,7 +24,8 @@
 	- PDF transcription
 - [x] Elsevier
 	- Content and metadata parsed
-- [ ] Springer
+- [x] Springer
+	- Metadata parsed
 - [ ] Wiley
 
 ## To do
