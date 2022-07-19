@@ -25,8 +25,10 @@
 - [x] Elsevier
 	- Content and metadata parsed
 - [x] Springer
-	- Metadata parsed
-- [ ] Wiley
+	- Content and Metadata parsed
+- [x] Wiley
+	- Content and Metadata parsed
+	- Wiley's has several access limitations, it is very possible that the requests fail after a few tries
 
 ## To do
 
