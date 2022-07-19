@@ -1,12 +1,13 @@
 import re
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
 from utils.text import fix_text_wraps, strip_name
 from webdriver import WebDriver
+from webdriver.utils import get_text_from_element
 
 
 class WileyScraper(IScraperStrategy):
@@ -70,12 +71,10 @@ class WileyScraper(IScraperStrategy):
 
     @property
     def references(self) -> List[str]:
-        self.__webdriver.click_element(
-            selector="a#pane-pcw-referencescon",
-            wait_for_selector="div.references-single-wrapper")
-        refs = self.__webdriver.find_element("div.references-single-wrapper")
         return [
-            re.sub(r"(?P<ref>.+)\n.+", r"\g<ref>", ref.text) for ref in refs]
+            re.sub(r"(?P<ref>^.+\.).+$", r"\g<ref>", get_text_from_element(i))
+            for i in self.__webdriver.find_elements(
+                "section#references-section li[data-bib-id]")]
 
 
 def get_strategy() -> IScraperStrategy:
