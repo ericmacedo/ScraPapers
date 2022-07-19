@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from os.path import getctime
 from pathlib import Path
 from sys import platform
-from time import sleep
 from typing import List
 
 from selenium.common.exceptions import (NoSuchElementException,
@@ -12,6 +11,7 @@ from selenium.common.exceptions import (NoSuchElementException,
                                         TimeoutException)
 from selenium.webdriver import FirefoxOptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -33,11 +33,39 @@ class WebDriver:
         self.__options.add_argument("--headless")
 
         preferences = [
+            ("dom.webdriver.enabled", False),
+
+            # Downlaod settings
             ("browser.download.folderList", 2),
-            ("browser.download.dir", f"{self.__download_dir}"),
+            ("browser.download.dir", f"{download_dir}"),
             ("browser.download.useDownloadDir", True),
             ("browser.helperApps.neverAsk.saveToDisk", "application/pdf"),
-            ("pdfjs.disabled", True)]
+            ("pdfjs.disabled", True),
+
+            # disable prefetching
+            ("network.dns.disablePrefetch", True),
+            ("network.prefetch-next", False),
+
+            # disable OpenH264 codec downloading
+            ("media.gmp-gmpopenh264.enabled", False),
+            ("media.gmp-manager.url", ""),
+
+            # disable experiments
+            ("experiments.enabled", False),
+            ("experiments.supported", False),
+            ("experiments.manifest.uri", ""),
+
+            # disable telemetry
+            ("toolkit.telemetry.enabled", False),
+            ("toolkit.telemetry.unified", False),
+            ("toolkit.telemetry.archive.enabled", False),
+            ("browser.contentblocking.category", "strict"),
+
+            # disable health reports
+            ("datareporting.healthreport.service.enabled", False),
+            ("datareporting.healthreport.uploadEnabled", False),
+            ("datareporting.policy.dataSubmissionEnabled", False)]
+
         for pref in preferences:
             self.__options.set_preference(*pref)
 
@@ -47,6 +75,7 @@ class WebDriver:
         self.__browser = webdriver.Firefox(
             executable_path=f"{self.__geckodriver}.{self.__driver_ext()}",
             service_log_path=f"{self.__geckodriver}.log",
+            capabilities=DesiredCapabilities.FIREFOX,
             options=self.__options)
 
     def __disconnect(self):
@@ -134,21 +163,21 @@ class WebDriver:
         if wait_for_selector:
             self.wait_for_element(wait_for_selector)
 
-    def wait_for_element(self, selector: str) -> WebElement:
+    def wait_for_element(self, selector: str, timeout: int = 10) -> WebElement:
         time.sleep(1)
-        return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
+        return WebDriverWait(self.__browser, timeout, ignored_exceptions=[
             StaleElementReferenceException, NoSuchElementException
         ]).until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
 
-    def wait_for_elements(self, selector: str) -> List[WebElement]:
+    def wait_for_elements(self, selector: str, timeout: int = 10) -> List[WebElement]:
         time.sleep(1)
-        return WebDriverWait(self.__browser, timeout=10, ignored_exceptions=[
+        return WebDriverWait(self.__browser, timeout, ignored_exceptions=[
             StaleElementReferenceException, NoSuchElementException
         ]).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)))
 
-    def wait_for_url_change(self) -> None:
+    def wait_for_url_change(self, timeout: int = 10) -> None:
         try:
-            WebDriverWait(self.__browser, 10).until(
+            WebDriverWait(self.__browser, timeout).until(
                 EC.url_changes(self.__browser.current_url))
         except TimeoutException:
             pass
