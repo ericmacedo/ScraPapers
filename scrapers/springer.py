@@ -5,7 +5,7 @@ from typing import Dict, List
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.text import strip_name
+from utils.text import fix_text_wraps, strip_name
 from webdriver import WebDriver
 
 
@@ -27,8 +27,7 @@ class SpringerScraper(IScraperStrategy):
     def authors(self) -> List[str]:
         authors = [
             strip_name(i.get_attribute("content"))
-            for i in self.__webdriver.find_elements(
-                'meta[name="citation_author"]')]
+            for i in self.__webdriver.get_metadata(name="citation_author")]
         return authors if any(authors) else None
 
     @property
@@ -36,10 +35,10 @@ class SpringerScraper(IScraperStrategy):
         sections = {}
         for section in self.__webdriver.find_elements("div.c-article-body section"):
             title = section.get_attribute("data-title")
-            sections[f"{title}"] = "\n".join([
+            sections[f"{title}"] = fix_text_wraps("\n".join([
                 i.text for i in section.find_elements(
                     By.CSS_SELECTOR, "div.c-article-section :not(h2, h3, h4)")
-            ]).strip()
+            ]).strip())
         return "\n".join(sections.values()) if sections else None
 
     @property
