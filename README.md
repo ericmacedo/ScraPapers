@@ -24,12 +24,20 @@
 	- PDF transcription
 - [x] Elsevier
 	- Content and metadata parsed
+	- [ ] PDF transcription
 - [x] Springer
 	- Content and Metadata parsed
+	- [ ] PDF transcription
 - [x] Wiley
 	- Content and Metadata parsed
 	- Wiley's has several access limitations, it is very possible that the requests fail after a few tries
+	- [ ] PDF transcription
 
 ## To do
 
 - [ ] Proxy configuration
+- [ ] Command line CLI
+	- [x] Get DOI list from txt file
+	- [x] Get DOI list from tabular file
+- [ ] TK user interface
+- [ ] Docker infrastructure
