@@ -4,7 +4,7 @@ from typing import List
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.text import fix_text_wraps, strip_name
+from utils.text import fix_text_wraps, extract_name
 from webdriver import WebDriver
 
 
@@ -31,7 +31,7 @@ class ElsevierScraper(IScraperStrategy):
         authors = [
             author.find_elements(By.CSS_SELECTOR, "span.content span")
             for author in authors]
-        authors = [strip_name(" ".join([i.text for i in name_parts]))
+        authors = [extract_name(" ".join([i.text for i in name_parts]))
                    for name_parts in authors]
         return authors if any(authors) else None
 
@@ -45,8 +45,8 @@ class ElsevierScraper(IScraperStrategy):
             paragraphs = [
                 paragraph
                 for paragraph in section.find_elements(By.CSS_SELECTOR, "p")]
-            sections[f"{title}"] = "\n".join([p.text for p in paragraphs])
-        return "\n".join(sections.values())
+            sections[f"{title}"] = " ".join([p.text for p in paragraphs])
+        return fix_text_wraps(" ".join(sections.values())) if sections else None
 
     @property
     def abstract(self) -> str:

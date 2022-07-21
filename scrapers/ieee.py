@@ -1,16 +1,16 @@
+import os
 import re
 from datetime import datetime
 from typing import List
+from urllib import response
 
 import requests
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.pdf import pdf_to_string
-from utils.text import strip_name, fix_text_wraps
+from utils.pdf import PDF
+from utils.text import extract_name, fix_text_wraps
 from webdriver import WebDriver
-
-import os
 
 
 class IEEEScraper(IScraperStrategy):
@@ -40,7 +40,7 @@ class IEEEScraper(IScraperStrategy):
             self.__webdriver.click_element(id, ".authors-accordion-container")
 
         return [
-            strip_name(i.text.split("\n")[0])
+            extract_name(i.text.split("\n")[0])
             for i in self.__webdriver.find_elements(
                 ".authors-accordion-container")]
 
@@ -58,25 +58,20 @@ class IEEEScraper(IScraperStrategy):
                     for paragraph in section.find_elements(By.TAG_NAME, "p")]
                 sections[f"{title.lower()}"] = "\n".join(paragraphs)
 
-            return "\n".join(sections.values())
+            return fix_text_wraps(" ".join(sections.values()))
         else:
             self.__webdriver.click_element(
-                ".stats-document-lh-action-downloadPdf_2")
+                "a.stats-document-lh-action-downloadPdf_2")
+            self.__webdriver.wait_for_download_queue()
 
             pdf_path = self.__webdriver.download_list()[0]
 
-            with open(pdf_path, "rb") as f_pdf:
-                pdf_str = pdf_to_string(f_pdf)
+            pdf = PDF(path=pdf_path, remove_css_selectors="div.annotation")
 
-            os.remove(pdf_path)
             self.__webdriver.back()
+            os.remove(pdf_path)
 
-            pdf_str = re.sub(
-                r"(?!.+)(?:\n*Authorized licensed use limited to:.+\n*)(?<!.)",
-                r" ", pdf_str)
-            pdf_str = fix_text_wraps(pdf_str)
-
-            return pdf_str
+            return fix_text_wraps(pdf.full_text)
 
     @property
     def abstract(self) -> str:

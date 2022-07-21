@@ -1,17 +1,14 @@
-from asyncio import selector_events
+import os
 import re
 from datetime import datetime
 from typing import List
 
 import requests
-from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.pdf import pdf_to_string
-from utils.text import strip_name, fix_text_wraps
+from utils.pdf import PDF
+from utils.text import fix_text_wraps, extract_name
 from webdriver import WebDriver
-
-import os
 
 
 class ACMScraper(IScraperStrategy):
@@ -31,26 +28,24 @@ class ACMScraper(IScraperStrategy):
     @property
     def authors(self) -> List[str]:
         authors = [
-            strip_name(i.text)
+            extract_name(i.text)
             for i in self.__webdriver.find_elements("span.loa__author-name")
         ]
         return authors if any(authors) else None
 
     @property
     def content(self) -> str:
-        self.__webdriver.click_element(".pdf-file a")
+        self.__webdriver.click_element("a.pdf-file a")
         self.__webdriver.wait_for_download_queue()
 
         pdf_path = self.__webdriver.download_list()[0]
 
-        with open(pdf_path, "rb") as f_pdf:
-            pdf_str = pdf_to_string(f_pdf)
+        pdf = PDF(path=pdf_path, remove_css_selectors="div.annotation")
 
-        os.remove(pdf_path)
         self.__webdriver.back()
-        pdf_str = fix_text_wraps(pdf_str)
+        os.remove(pdf_path)
 
-        return pdf_str
+        return fix_text_wraps(pdf.full_text)
 
     @property
     def abstract(self) -> str:

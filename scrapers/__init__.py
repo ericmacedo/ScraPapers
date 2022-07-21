@@ -1,15 +1,16 @@
 import hashlib
+import pathlib
+import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from importlib.util import module_from_spec, spec_from_file_location
-import pathlib
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse
 
-from webdriver import ResponseStatus, WebDriver
+from tqdm import tqdm
 
 from models import Document
-import re
+from webdriver import ResponseStatus, WebDriver
 
 
 class IScraperStrategy(ABC):
@@ -62,6 +63,17 @@ class IScraperStrategy(ABC):
     def references(self) -> List[str]:
         pass
 
+    def asdict(self) -> Dict:
+        return dict(
+            title=self.title,
+            authors=self.authors,
+            content=self.content,
+            abstract=self.abstract,
+            citations=self.citations,
+            source=self.source,
+            date=self.date,
+            references=self.references)
+
 
 class Scraper:
     """
@@ -112,35 +124,30 @@ class Scraper:
             doi_list = [doi_list]
 
         documents: List[Document] = []
-        for doi in doi_list:
-            doc = dict(
-                id=hashlib.md5(doi.encode("utf-8")).hexdigest(),
-                doi=doi.strip())
-            doc_error = None
+        with tqdm(total=len(doi_list)) as pbar:
+            for doi in doi_list:
+                doc = dict(
+                    id=hashlib.md5(doi.encode("utf-8")).hexdigest(),
+                    doi=doi.strip())
+                doc_error = None
 
-            with self.__webdriver.get(f"https://doi.org/{doc['doi']}"):
-                response: ResponseStatus = self.__webdriver.response
-                if response.status:
-                    doc['url'] = self.__webdriver.url
+                pbar.set_description(f"Processing DOI ({doc['doi']})")
+                with self.__webdriver.get(f"https://doi.org/{doc['doi']}"):
+                    response: ResponseStatus = self.__webdriver.response
+                    if response.status:
+                        doc['url'] = self.__webdriver.url
 
-                    if self.__set_strategy(doc['url']):
-                        doc.update(dict(
-                            title=self.__strategy.title,
-                            authors=self.__strategy.authors,
-                            content=self.__strategy.content,
-                            abstract=self.__strategy.abstract,
-                            citations=self.__strategy.citations,
-                            source=self.__strategy.source,
-                            date=self.__strategy.date,
-                            references=self.__strategy.references))
+                        if self.__set_strategy(doc['url']):
+                            doc.update(self.__strategy.asdict())
+                        else:
+                            doc_error = f"Unsupported url: {doc['url']}"
                     else:
-                        doc_error = f"Unsupported url: {doc['url']}"
-                else:
-                    doc_error = f"Request error (Code {response.code})"
+                        doc_error = f"Request error (Code {response.code})"
 
-            doc = Document(**doc)
-            if doc_error:
-                doc.error = doc_error
-            documents.append(doc)
+                doc = Document(**doc)
+                if doc_error:
+                    doc.error = doc_error
+                pbar.update(1)
+                documents.append(doc)
 
         return documents

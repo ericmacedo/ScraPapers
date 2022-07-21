@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -27,3 +27,8 @@ class Document:
     @error.setter
     def error(self, error_message: str):
         self.__error = error_message
+
+    def __getitem__(self, index: str) -> Any:
+        if isinstance(index, str) and hasattr(self, index):
+            return getattr(self, index)
+        return None

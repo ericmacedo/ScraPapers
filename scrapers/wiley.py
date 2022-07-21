@@ -5,7 +5,7 @@ from typing import List
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.text import fix_text_wraps, strip_name
+from utils.text import fix_text_wraps, extract_name
 from webdriver import WebDriver
 from webdriver.utils import get_text_from_element
 
@@ -27,7 +27,7 @@ class WileyScraper(IScraperStrategy):
     @property
     def authors(self) -> List[str]:
         authors = [
-            strip_name(i)
+            extract_name(i)
             for i in self.__webdriver.get_metadata(name="citation_author")]
         return authors if any(authors) else None
 
@@ -40,11 +40,11 @@ class WileyScraper(IScraperStrategy):
                                              ":scope > section.article-section__content," +
                                              "section.article-section__sub-content"):
             title = section.find_element(By.CSS_SELECTOR, "h2, h3, h4").text
-            sections[f"{title}"] = fix_text_wraps("\n".join([
+            sections[f"{title}"] = " ".join([
                 i.text for i in section.find_elements(
                     By.CSS_SELECTOR, ":not(h2, h3, h4)")
-            ]).strip())
-        return "\n".join(sections.values()) if sections else None
+            ]).strip()
+        return fix_text_wraps(" ".join(sections.values())) if sections else None
 
     @property
     def abstract(self) -> str:
