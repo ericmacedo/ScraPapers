@@ -1,19 +1,19 @@
-from pathlib import PosixPath
-from typing import List
-
-from utils.text import extract_doi
-from pandas import Series, read_csv, NA
+from datetime import date, datetime
+from typing import Iterable
 
 
-def doi_list_from_txt(path: PosixPath) -> List[str]:
-    with open(path, "r", encoding="utf-8") as f:
-        txt: str = f.read()
+def defaut_json_serializer(obj: object) -> object:
+    """JSON serializer for objects not serializable by default json code"""
 
-    return [*set(extract_doi(txt))]
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    else:
+        return str(obj)
 
 
-def doi_list_from_tabular(path: PosixPath, sep: str, column: str) -> List[str]:
-    series: Series = read_csv(path, sep=sep, encoding="utf-8",
-                              usecols=[column], na_values=NA).squeeze()
-
-    return series.dropna().apply(str.strip).astype(str).unique().tolist()
+def are_instances_of(it: Iterable, dtype: object) -> bool:
+    it = iter(it)
+    while current := next(it, None):
+        if not isinstance(current, dtype):
+            return False
+    return True

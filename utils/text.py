@@ -1,10 +1,11 @@
-from nltk.stem import WordNetLemmatizer
-from nltk import pos_tag, word_tokenize
-from functools import lru_cache
 import re
 import string
-from typing import Any, List
+from functools import lru_cache
+from typing import Any
+
+from nltk import pos_tag
 from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer
 
 
 def extract_name(s: str) -> str:
@@ -21,10 +22,6 @@ def fix_text_wraps(s: str) -> str:
     s = re.sub(r"-\n+", r"", s)
     s = re.sub(r"\s+", r" ", s)
     return s
-
-
-def extract_doi(s: str) -> List[str]:
-    return re.findall(r"(?P<doi>\d+\.\d+/\S+\b)", s, re.MULTILINE)
 
 
 @lru_cache(maxsize=None)
