@@ -37,7 +37,7 @@ class WebDriver:
 
             # Downlaod settings
             ("browser.download.folderList", 2),
-            ("browser.download.dir", f"{download_dir}"),
+            ("browser.download.dir", f"{self.__download_dir}"),
             ("browser.download.useDownloadDir", True),
             ("browser.helperApps.neverAsk.saveToDisk", "application/pdf"),
             ("pdfjs.disabled", True),
@@ -88,6 +88,7 @@ class WebDriver:
         while timeout and [*Path(self.__download_dir).glob("*.part")]:
             time.sleep(1)
             timeout -= 1
+        time.sleep(2)
 
     def __del__(self):
         self.__disconnect()
