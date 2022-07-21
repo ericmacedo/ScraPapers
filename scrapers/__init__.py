@@ -1,15 +1,15 @@
-import hashlib
 import pathlib
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from importlib.util import module_from_spec, spec_from_file_location
-from typing import Dict, Iterable, List
+from typing import Dict, Generator, Iterable, List
 from urllib.parse import urlparse
 
 from tqdm import tqdm
 
 from models import Document
+from utils.doi import doi_to_md5
 from webdriver import ResponseStatus, WebDriver
 
 
@@ -119,16 +119,14 @@ class Scraper:
                 return True
         return False
 
-    def get(self, doi_list: Iterable[str] | str) -> List[Document] | Document:
+    def get(self, doi_list: Iterable[str] | str) -> Generator[Document, None, None]:
         if isinstance(doi_list, str):
             doi_list = [doi_list]
 
-        documents: List[Document] = []
         with tqdm(total=len(doi_list)) as pbar:
             for doi in doi_list:
-                doc = dict(
-                    id=hashlib.md5(doi.encode("utf-8")).hexdigest(),
-                    doi=doi.strip())
+                doi = doi.strip()
+                doc = dict(id=doi_to_md5(doi), doi=doi)
                 doc_error = None
 
                 pbar.set_description(f"Processing DOI ({doc['doi']})")
@@ -148,6 +146,5 @@ class Scraper:
                 if doc_error:
                     doc.error = doc_error
                 pbar.update(1)
-                documents.append(doc)
 
-        return documents
+                yield doc
