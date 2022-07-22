@@ -84,11 +84,20 @@ class WebDriver:
             del self.__browser
             self.__browser = None
 
-    def wait_for_download_queue(self, timeout: int = 60) -> bool:
-        while timeout and [*Path(self.__download_dir).glob("*.part")]:
+    def wait_for_download_queue(self, timeout: int = 60) -> Path:
+        initial_pdf_count = len([*Path(self.__download_dir).glob("*.pdf")])
+
+        for _ in range(timeout):
+            current_pdf_count = len([*Path(self.__download_dir).glob("*.pdf")])
+            part_count = len([*Path(self.__download_dir).glob("*.part")])
+            if part_count == 0 and current_pdf_count > initial_pdf_count:
+                break
             time.sleep(1)
-            timeout -= 1
-        time.sleep(2)
+        else:
+            raise TimeoutError(
+                f"No download queue was detected within {timeout} seconds")
+
+        return self.download_list()[0]
 
     def __del__(self):
         self.__disconnect()

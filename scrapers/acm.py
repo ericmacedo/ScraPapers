@@ -35,10 +35,9 @@ class ACMScraper(IScraperStrategy):
 
     @property
     def content(self) -> str:
-        self.__webdriver.click_element("a.pdf-file a")
-        self.__webdriver.wait_for_download_queue()
+        self.__webdriver.click_element(".pdf-file a")
 
-        pdf_path = self.__webdriver.download_list()[0]
+        pdf_path = self.__webdriver.wait_for_download_queue()
 
         pdf = PDF(path=pdf_path, remove_css_selectors="div.annotation")
 

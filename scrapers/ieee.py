@@ -62,9 +62,8 @@ class IEEEScraper(IScraperStrategy):
         else:
             self.__webdriver.click_element(
                 "a.stats-document-lh-action-downloadPdf_2")
-            self.__webdriver.wait_for_download_queue()
 
-            pdf_path = self.__webdriver.download_list()[0]
+            pdf_path = self.__webdriver.wait_for_download_queue()
 
             pdf = PDF(path=pdf_path, remove_css_selectors="div.annotation")
 
