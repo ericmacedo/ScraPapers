@@ -1,5 +1,5 @@
 from functools import cached_property
-from pathlib import PosixPath
+from pathlib import Path
 from typing import List
 
 from functools import reduce
@@ -18,11 +18,11 @@ class PDF:
 
 
         Keyword arguments:
-        path (pathlib.PosixPath) -- the path to a valid PDF file
+        path (pathlib.Path) -- the path to a valid PDF file
         buffer (requests.Response) -- a buffer object containing a response with the PDF file
         remove_css_selectors (List[str] | str) -- a single or list of CSS selectors to remove from the extracted PDF
         """
-        self.__path: PosixPath = kwargs.get("path", None)
+        self.__path: Path = kwargs.get("path", None)
         self.__buffer: Response = kwargs.get("buffer", None)
 
         if self.__path:
