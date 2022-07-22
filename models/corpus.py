@@ -1,12 +1,13 @@
-from concurrent.futures import process
+from collections import namedtuple
 from pathlib import Path
-from typing import Any, Generator, Iterable, List, Tuple
-import pandas as pd
-from models import Document
+from typing import Any, Dict, Generator, Iterable, List, Tuple
 
+import pandas as pd
+
+from models import Document
 from scrapers import Scraper
 from utils import are_instances_of
-from utils.doi import doi_to_md5
+from utils.text import extract_ngrams
 
 
 class Corpus:
@@ -21,8 +22,9 @@ class Corpus:
             self.__output_dir).absolute().joinpath("corpus")
         self.__corpus_dir.mkdir(parents=True, exist_ok=True)
 
+        self.__vocab_path = Path(self.__output_dir).joinpath("vocab.tsv")
+
         self.__build_corpus()
-        self.__vocab_path = Path(self.__output_dir).joinpath("vocab.txt")
 
     @property
     def __FIELDS(self) -> List[str]:
@@ -48,8 +50,12 @@ class Corpus:
         return [*set(self.__doi_list) - set(self["doi"])]
 
     def __build_corpus(self):
-        for doc in self.__scraper.get(self.__pending):
-            doc.save(self.__corpus_dir)
+        if self.__pending:
+            for doc in self.__scraper.get(self.__pending):
+                doc.save(self.__corpus_dir)
+
+            vocab: pd.DataFrame = extract_ngrams(self["content"])
+            vocab.to_csv(self.__vocab_path, encoding="utf-8", sep="\t")
 
     def __getitem__(self, indexer: str | int | slice | Tuple[str]) -> Document | List[Any]:
         if isinstance(indexer, str):
@@ -57,28 +63,20 @@ class Corpus:
                 raise KeyError(f"Key '{indexer}' not found.")
             return [doc[indexer] for doc in self.documents]
         elif isinstance(indexer, int):
-            return Document.load_asdict(
+            return Document.load(
                 self.__corpus_dir.joinpath(f"{self.index[indexer]}.json"))
         elif isinstance(indexer, slice):
             return [
-                self.__corpus_dir.joinpath(f"{self.index[index]}.json")
-                for index in self.index[indexer]]
+                Document.load(self.__corpus_dir.joinpath(f"{id}.json"))
+                for id in self.index[indexer]]
         elif isinstance(indexer, tuple) and are_instances_of(indexer, str):
-            frame = {f"key": [] for key in indexer}
+            frame = {f"{key}": [] for key in indexer}
             for doc in self.documents:
                 for key in indexer:
                     frame[key].append(doc[key])
-            return frame.values()
+            return pd.DataFrame(frame)
         else:
             raise KeyError(f"Key '{indexer}' is not a valid indexer.")
 
-    def __corpus_updated(self) -> None:
-        pass
-
-    def append(self, doi_list: List[str] = []) -> pd.DataFrame:
-        df = self.__build_dataframe(doi_list)
-
-        self.__documents = pd.concat([self.__documents, df]).drop_duplicates()
-
-        self.__corpus_updated()
-        return self.__documents[:]
+    def as_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame.from_records(doc.asdict() for doc in self.documents)

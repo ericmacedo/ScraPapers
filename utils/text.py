@@ -1,11 +1,13 @@
 import re
 import string
 from functools import lru_cache
-from typing import Any
+from typing import Any, Iterable, Tuple
 
+import pandas as pd
 from nltk import pos_tag
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 def extract_name(s: str) -> str:
@@ -44,12 +46,12 @@ def get_wordnet_pos(word: str) -> Any:
 def clean_text(s: str, **kwargs) -> str:
     # Kwargs
     __stop_words = kwargs.get("remove_stop_words", True)
-    __lowercase = kwargs.get("lowercase", False)
+    __lowercase = kwargs.get("lowercase", True)
     __strip_tags = kwargs.get("strip_tags", True)
     __symbols = kwargs.get("remove_symbols", True)
     __links = kwargs.get("remove_links", True)
     __punctuation = kwargs.get("remove_punctuation", True)
-    __numbers = kwargs.get("remove_numbers", False)
+    __numbers = kwargs.get("remove_numbers", True)
     __lemmatize = kwargs.get("lemmatize", True)
 
     stop_words = [*set(stopwords.words("english"))
@@ -91,3 +93,25 @@ def clean_text(s: str, **kwargs) -> str:
             ) if __lemmatize else token)
 
     return " ".join(tokens).strip()
+
+
+def extract_ngrams(corpus: Iterable[str], ngram_range: Tuple[int] = (1, 3),
+                   vocabulary: Iterable[str] = None) -> pd.DataFrame:
+    params = {
+        "ngram_range": ngram_range,
+        "preprocessor": clean_text,
+        "vocabulary": vocabulary}
+    vectorizer = CountVectorizer(**params)
+
+    ngrams = vectorizer.fit_transform(corpus)
+    ngrams_frequency = ngrams.toarray().sum(axis=0)
+
+    vocab = vectorizer.vocabulary_
+
+    df_ngram = pd.DataFrame(
+        sorted([(ngram, ngrams_frequency[index])
+               for ngram, index in vocab.items()],
+               reverse=True, key=lambda item: item[0])
+    ).rename(columns={0: 'ngrams', 1: 'frequency'})
+
+    return df_ngram
