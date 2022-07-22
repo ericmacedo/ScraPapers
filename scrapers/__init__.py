@@ -91,7 +91,7 @@ class Scraper:
         strategies = {
             f"{file.name.rstrip('.py')}": f"{file}"
             for file in pathlib.Path(__file__).absolute().parent.glob(
-                '**/*.py'
+                "*.py"
             ) if re.match(r"^[A-Za-z]+\.py", f"{file.name}")}
 
         return {

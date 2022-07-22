@@ -37,6 +37,7 @@ class ElsevierScraper(IScraperStrategy):
 
     @property
     def content(self) -> str:
+        # TODO PDF fetching and transcription
         sections = {}
 
         for section in self.__webdriver.wait_for_elements("div#body section"):

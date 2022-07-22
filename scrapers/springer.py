@@ -32,6 +32,7 @@ class SpringerScraper(IScraperStrategy):
 
     @property
     def content(self) -> str:
+	# TODO PDF fetching and transcription
         sections = {}
         for section in self.__webdriver.find_elements("div.c-article-body section"):
             title = section.get_attribute("data-title")

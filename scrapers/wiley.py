@@ -33,6 +33,7 @@ class WileyScraper(IScraperStrategy):
 
     @property
     def content(self) -> str:
+        # TODO PDF fetching and transcription
         sections = {}
         article = self.__webdriver.find_element(
             "section.article-section__full")
