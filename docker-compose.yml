@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+    restart: on-failure
+  scrapaper:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./:/app
+    depends_on:
+      - tika
