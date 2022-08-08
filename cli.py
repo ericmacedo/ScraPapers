@@ -5,6 +5,10 @@ from typing import List
 from models.corpus import Corpus
 from utils.doi import doi_list_from_tabular, doi_list_from_txt
 
+import re
+from pathlib import Path
+import shutil
+
 TABULAR_FORMATS = ["CSV", "TSV"]
 
 # ============================================================================
@@ -24,6 +28,9 @@ parser.add_argument("--format", "-f", type=str, dest="format",
                     "\tTXT: DOI numbers are separated by spaces or line breaks.\n")
 parser.add_argument("--column", "-c", default=None, type=str, dest="column",
                     help="Column's name with the DOI list in the tabular file")
+parser.add_argument("--override", "-o", default=False, type=bool, dest="override",
+                    help="Override any previous scrapping performed"
+                    "(erases the 'output/' directory)")
 
 args = parser.parse_args()
 
@@ -37,6 +44,8 @@ if not file_path.is_file():
 
 file_format: str = args.format
 column: str = args.column
+
+override: bool = args.override
 
 # ============================================================================
 #   Extracting DOI list
@@ -60,8 +69,18 @@ print(f"Number of valid DOI number: {len(doi_list)}")
 # ============================================================================
 #   Scrape
 # ============================================================================
-corpus: Corpus = Corpus(doi_list)  # Build corpus with valid DOIs
 
-# TODO clear output folder on demand (use arguments).
-# Otherwise, the corpus will be incremented, executing
-# the ngram extraction once again.
+if override:
+    confirm_msg = "You're about to erase all content from output. Proceed? (y/n) "
+    pattern = re.compile(r"y|n", re.IGNORECASE)
+
+    while (confirm := str(input(confirm_msg)).lower()) and not pattern(confirm):
+        print("Invalid input! Must be 'y' (yes)  or 'n' (no)")
+
+    if confirm == "n":
+        print("Aborting!")
+        exit(0)
+
+    shutil.rmtree(path="output/")
+
+corpus: Corpus = Corpus(doi_list)  # Build corpus with valid DOIs

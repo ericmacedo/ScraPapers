@@ -22,7 +22,9 @@ class Corpus:
             self.__output_dir).absolute().joinpath("corpus")
         self.__corpus_dir.mkdir(parents=True, exist_ok=True)
 
-        self.__vocab_path = Path(self.__output_dir).joinpath("vocab.tsv")
+        self.__vocab_dict = {
+            "path_or_buf": Path(self.__output_dir).joinpath("vocab.tsv"),
+            "encoding": "utf-8", "sep": "\t", "index": False, "header": False}
 
         self.__build_corpus()
 
@@ -55,7 +57,7 @@ class Corpus:
                 doc.save(self.__corpus_dir)
 
             vocab: pd.DataFrame = extract_ngrams(self["content"])
-            vocab.to_csv(self.__vocab_path, encoding="utf-8", sep="\t")
+            vocab.to_csv(**self.__vocab_dict)
 
     def __getitem__(self, indexer: str | int | slice | Tuple[str]) -> Document | List[Any]:
         if isinstance(indexer, str):
