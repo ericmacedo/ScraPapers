@@ -1,14 +1,17 @@
-import pathlib
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from importlib.util import module_from_spec, spec_from_file_location
-from typing import Dict, Generator, Iterable, List
+from pathlib import Path
+from typing import Coroutine, Dict, Generator, Iterable, List
 from urllib.parse import urlparse
 
+import pandas as pd
 from tqdm import tqdm
 
-from models import Document
+from common.models.corpus import Corpus
+from common.models.document import Document
+from common.utils.text import extract_ngrams
 from utils.doi import doi_to_md5
 from webdriver import ResponseStatus, WebDriver
 
@@ -90,7 +93,7 @@ class Scraper:
 
         strategies = {
             f"{file.name.rstrip('.py')}": f"{file}"
-            for file in pathlib.Path(__file__).absolute().parent.glob(
+            for file in Path(__file__).absolute().parent.glob(
                 "*.py"
             ) if re.match(r"^[A-Za-z]+\.py", f"{file.name}")}
 
@@ -148,3 +151,43 @@ class Scraper:
                 pbar.update(1)
 
                 yield doc
+
+
+class ScrapperManager:
+    def __init__(self, doi_list: Iterable[str] = [],
+                 output_dir: List[str] = [".", "output"]) -> None:
+        self.__scraper = Scraper()
+
+        self.__doi_list = doi_list
+
+        # Output directory
+        self.__output_dir = Path(*output_dir).resolve()
+        self.__corpus_dir = self.__output_dir.joinpath("corpus")
+        self.__corpus_dir.mkdir(parents=True, exist_ok=True)
+
+        self.__vocab_dict = {
+            "path_or_buf": self.__output_dir.joinpath("vocab.tsv"),
+            "encoding": "utf-8", "sep": "\t", "index": False, "header": False}
+
+        self.corpus: Corpus = Corpus()
+
+        self.__build_corpus()
+
+    @property
+    def documents(self) -> Generator[Document, None, None]:
+        for doc in self.corpus.index:
+            yield Document.load(self.__corpus_dir.joinpath(f"{doc}.json"))
+
+    @property
+    def __pending(self) -> List[str]:
+        if not self.documents:
+            return self.__doi_list
+        return [*set(self.__doi_list) - set(self.corpus["doi"])]
+
+    def __build_corpus(self):
+        if self.__pending:
+            for doc in self.__scraper.get(self.__pending):
+                doc.save(self.__corpus_dir)
+
+            vocab: pd.DataFrame = extract_ngrams(self.corpus["content"])
+            vocab.to_csv(**self.__vocab_dict)

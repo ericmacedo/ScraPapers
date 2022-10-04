@@ -8,8 +8,8 @@ import requests
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.pdf import PDF
-from utils.text import extract_name, fix_text_wraps
+from common.utils.pdf import PDF
+from common.utils.text import extract_name, fix_text_wraps
 from webdriver import WebDriver
 
 

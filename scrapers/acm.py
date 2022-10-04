@@ -6,8 +6,8 @@ from typing import List
 import requests
 
 from scrapers import IScraperStrategy
-from utils.pdf import PDF
-from utils.text import fix_text_wraps, extract_name
+from common.utils.pdf import PDF
+from common.utils.text import fix_text_wraps, extract_name
 from webdriver import WebDriver
 
 

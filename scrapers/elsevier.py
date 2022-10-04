@@ -4,7 +4,7 @@ from typing import List
 from selenium.webdriver.common.by import By
 
 from scrapers import IScraperStrategy
-from utils.text import fix_text_wraps, extract_name
+from common.utils.text import fix_text_wraps, extract_name
 from webdriver import WebDriver
 
 

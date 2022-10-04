@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from typing import List
 
-from models.corpus import Corpus
+from common.models.corpus import Corpus
 from utils.doi import doi_list_from_tabular, doi_list_from_txt
 
 import re
